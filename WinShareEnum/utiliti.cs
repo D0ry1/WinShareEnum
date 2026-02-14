@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.ComponentModel;
 using System.Threading;
@@ -150,21 +151,20 @@ namespace WinShareEnum
                 {
                     var result = 0;
 
-                    if (timeout == true)
+                    if (timeout)
                     {
                         var tokenSource = new CancellationTokenSource();
                         CancellationToken token = tokenSource.Token;
                         int timeOut = MainWindow.TIMEOUT;
 
-                        var task = Task.Factory.StartNew(() =>
-                            {
-                                result = WNetAddConnection2(
+                        var task = Task.Run(() =>
+                        {
+                            result = WNetAddConnection2(
                                 netResource,
                                 credentials.Password,
                                 credentials.UserName,
                                 0);
-
-                            }, token);
+                        }, token);
 
                         if (!task.Wait(timeOut, token))
                             throw new Win32Exception("The request timed out.");
@@ -188,7 +188,7 @@ namespace WinShareEnum
 
                 catch (Exception ex)
                 {
-                    throw new Exception("Error connecting to remote share: " + ex.Message);
+                    throw new Exception($"Error connecting to remote share: {ex.Message}");
                 }
             }
 
@@ -325,7 +325,7 @@ namespace WinShareEnum
                 IntPtr currentPtr = bufPtr;
                 for (int i = 0; i < entriesread; i++)
                 {
-                    if (MainWindow._cancellationToken.IsCancellationRequested == true)
+                    if (MainWindow._cancellationToken.IsCancellationRequested)
                     {
                         throw new OperationCanceledException();
                     }
@@ -333,7 +333,7 @@ namespace WinShareEnum
                     ShareInfos.Add(shi1);
 
 
-                    currentPtr = new IntPtr(currentPtr.ToInt32() + nStructSize);
+                    currentPtr = IntPtr.Add(currentPtr, nStructSize);
                 }
                 NetApiBufferFree(bufPtr);
                 return ShareInfos.ToArray();
@@ -473,13 +473,9 @@ namespace WinShareEnum
                 {
                     encoding = Encoding.UTF32;
                 }
-                else if (rawData[0] == 0x2b && rawData[1] == 0x2f && rawData[2] == 0x76)
-                {
-                    encoding = Encoding.UTF7;
-                }
                 else
                 {
-                    encoding = Encoding.Default;
+                    encoding = Encoding.UTF8;
                 }
 
                 // Read text and detect the encoding
@@ -519,6 +515,7 @@ namespace WinShareEnum
 
     public class updates
     {
+        private static readonly HttpClient _httpClient = new HttpClient();
 
         public static double getCurrentVersion()
         {
@@ -528,44 +525,42 @@ namespace WinShareEnum
             return double.Parse(version);
         }
 
-        public static List<string> getInterestingFileUpdates()
+        public static async Task<List<string>> getInterestingFileUpdatesAsync()
         {
-            return readFromSite(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/interestingFiles.txt"));
-            
+            return await readFromSiteAsync(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/interestingFiles.txt"));
         }
 
-        public static List<string>getFileFilterUpdates()
+        public static async Task<List<string>> getFileFilterUpdatesAsync()
         {
-            return readFromSite(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/filterRules.txt"));
+            return await readFromSiteAsync(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/filterRules.txt"));
         }
-        
-        public static double getLatestVersion()
-        {
-            return double.Parse(readFromSite(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/version.txt"))[0]);                    
-        }
-        
 
-        public static string downloadUpdate(double newestVersion)
+        public static async Task<double> getLatestVersionAsync()
         {
-            WebClient client = new WebClient();
-            client.Proxy = null;
-            string filePath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum-" + newestVersion.ToString() + ".exe";
+            var lines = await readFromSiteAsync(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/version.txt"));
+            return double.Parse(lines[0]);
+        }
+
+        public static async Task<string> downloadUpdateAsync(double newestVersion)
+        {
+            string filePath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
+                $"WinShareEnum-{newestVersion}.exe");
 
             if (File.Exists(filePath))
             {
                 return filePath;
             }
 
-            client.DownloadFile("https://github.com/nccgroup/WinShareEnum/raw/master/Info/WinShareEnum.exe", filePath);
+            var bytes = await _httpClient.GetByteArrayAsync("https://github.com/nccgroup/WinShareEnum/raw/master/Info/WinShareEnum.exe");
+            await File.WriteAllBytesAsync(filePath, bytes);
             return filePath;
         }
 
-
-        private static List<string> readFromSite(Uri url)
+        private static async Task<List<string>> readFromSiteAsync(Uri url)
         {
-            WebClient client = new WebClient();
-            client.Proxy = null;
-            return client.DownloadString(url).Split('\n').ToList<string>(); ;
+            string content = await _httpClient.GetStringAsync(url);
+            return content.Split('\n').ToList();
         }
     }
 }

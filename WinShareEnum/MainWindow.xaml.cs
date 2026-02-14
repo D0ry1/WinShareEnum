@@ -23,7 +23,7 @@ namespace WinShareEnum
 
         #region variables
         public static string USERNAME = "";
-        public static string PASSSWORD = "";
+        public static string PASSWORD = "";
         public static List<string> interestingFileList = new List<string>() { "web.conf", "credentials", "credentials.*", "###\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b", "creds", "creds.*", "shadow", ".bashrc", "secret", "secret.*", "*.pem", "password.*", ".htaccess", "key.*", "privatekey.*", "private_key.*", "global.asax", "pwned.*", "*.key", "*.pkcs12", "*.pfx", "*.p12", "*.crt" };
         public static List<string> fileContentsFilters = new List<string>() { "BEGIN PRIVATE KEY", "BEGIN RSA PRIVATE KEY", "password=", "password =", "pass=", "pass = ", "password:", "password :", "username =", "user =", "username=", "user=" };
 
@@ -147,7 +147,7 @@ namespace WinShareEnum
         {
             if (tbPassword.Password != "")
             {
-                PASSSWORD = tbPassword.Password;
+                PASSWORD = tbPassword.Password;
             }
         }
 
@@ -165,7 +165,7 @@ namespace WinShareEnum
         {
             if (tbPassword.Password == "")
             {
-                tbPassword.Password = PASSSWORD;
+                tbPassword.Password = PASSWORD;
             }
         }
 
@@ -182,7 +182,7 @@ namespace WinShareEnum
             tbUsername.IsEnabled = false;
             tbPassword.IsEnabled = false;
             USERNAME = "";
-            PASSSWORD = "";
+            PASSWORD = "";
             tbUsername.Text = "DOMAIN\\USER";
             tbPassword.Password = "password";
         }
@@ -1011,68 +1011,66 @@ namespace WinShareEnum
             MessageBox.Show("Windows Share Enumerator\r\nVersion: " + updates.getCurrentVersion().ToString() + "\r\nJonathan.Murray@nccgroup.com", "About", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
-        private void mi_updateRules_Click(object sender, RoutedEventArgs e)
+        private async void mi_updateRules_Click(object sender, RoutedEventArgs e)
         {
             int count = 0;
             try
             {
-                List<string> fileFilterUpdates = updates.getFileFilterUpdates();
+                List<string> fileFilterUpdates = await updates.getFileFilterUpdatesAsync();
                 foreach (string update in fileFilterUpdates)
                 {
                     if (!Settings.Default.FileContentRules.Contains(update) && update != "")
                     {
                         Settings.Default.FileContentRules.Add(update);
                         count++;
-                        addLog("Added file filter rule " + update);
+                        addLog($"Added file filter rule {update}");
                     }
                 }
 
                 Settings.Default.Save();
 
-                List<string> interestingUpdates = updates.getInterestingFileUpdates();
+                List<string> interestingUpdates = await updates.getInterestingFileUpdatesAsync();
                 foreach (string update in interestingUpdates)
                 {
                     if (!Settings.Default.interestingFileNameRules.Contains(update) && update != "")
                     {
                         Settings.Default.interestingFileNameRules.Add(update);
                         count++;
-                        addLog("Added interesting file rule " + update);
+                        addLog($"Added interesting file rule {update}");
                     }
                 }
 
                 Settings.Default.Save();
-                MessageBox.Show("Rules update complete. " + count + " new rules added.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show($"Rules update complete. {count} new rules added.", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error updating rules. " + ex.Message, "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                addLog("Error " + ex.Message + " -- " + ex.StackTrace);
+                MessageBox.Show($"Error updating rules. {ex.Message}", "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                addLog($"Error {ex.Message} -- {ex.StackTrace}");
             }
-
-
-
         }
 
-        private void mi_checkAppUpdates_Click(object sender, RoutedEventArgs e)
+        private async void mi_checkAppUpdates_Click(object sender, RoutedEventArgs e)
         {
             try
             {
-                var latestVersion = updates.getLatestVersion();
+                var latestVersion = await updates.getLatestVersionAsync();
                 if (updates.getCurrentVersion() < latestVersion)
                 {
-                    MessageBoxResult mbr = MessageBox.Show("New version available, want to download it? \r\n\r\nNote: this will download to " + Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\WinShareEnum-" + latestVersion.ToString() + ".exe", "Update", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    MessageBoxResult mbr = MessageBox.Show($"New version available, want to download it? \r\n\r\nNote: this will download to {Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\WinShareEnum-{latestVersion}.exe", "Update", MessageBoxButton.YesNo, MessageBoxImage.Information);
 
                     if (mbr == MessageBoxResult.Yes)
                     {
                         try
                         {
                             addLog("Downloading most recent version to desktop..");
-                            addLog(updates.downloadUpdate(latestVersion) + " downloaded.");
+                            string path = await updates.downloadUpdateAsync(latestVersion);
+                            addLog($"{path} downloaded.");
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show("Error: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                            addLog("Error " + ex.Message + " -- " + ex.StackTrace);
+                            MessageBox.Show($"Error: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            addLog($"Error {ex.Message} -- {ex.StackTrace}");
                         }
                     }
                 }
@@ -1081,11 +1079,10 @@ namespace WinShareEnum
                     MessageBox.Show("No New Version Available", "Update", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
             }
-
             catch (Exception ex)
             {
-                MessageBox.Show("Error getting current version. " + ex.Message, "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
-                addLog("Error " + ex.Message + " -- " + ex.StackTrace);
+                MessageBox.Show($"Error getting current version. {ex.Message}", "Update Rules Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+                addLog($"Error {ex.Message} -- {ex.StackTrace}");
             }
         }
 
@@ -1195,7 +1192,7 @@ namespace WinShareEnum
                                 {
                                     throw new OperationCanceledException();
                                 }
-                                var _dirPerm = Directory.GetAccessControl(@"\\" + ServerName + "\\" + ss.shareName);
+                                var _dirPerm = new DirectoryInfo(@"\\" + ServerName + "\\" + ss.shareName).GetAccessControl();
                                 var _accessRules = _dirPerm.GetAccessRules(true, true, typeof(NTAccount));
                                 ss.permissionsList = _accessRules;
 
@@ -1932,7 +1929,7 @@ namespace WinShareEnum
             if (AUTHLOCALLY == true)
             {
                 oNetworkCredential.UserName = ServerName + USERNAME.TrimStart('.');
-                oNetworkCredential.Password = PASSSWORD;
+                oNetworkCredential.Password = PASSWORD;
             }
             else
             {
@@ -1942,7 +1939,7 @@ namespace WinShareEnum
                 }
 
                 oNetworkCredential.UserName = USERNAME;
-                oNetworkCredential.Password = PASSSWORD;
+                oNetworkCredential.Password = PASSWORD;
             }
 
             return oNetworkCredential;
@@ -2083,7 +2080,6 @@ namespace WinShareEnum
             }
         }
 
+        #endregion
     }
 }
-
-        #endregion
