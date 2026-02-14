@@ -516,11 +516,11 @@ namespace WinShareEnum
     {
         private static readonly HttpClient _httpClient = new HttpClient();
 
-        public static double getCurrentVersion()
+        public static Version getCurrentVersion()
         {
             var version = Assembly.GetExecutingAssembly()
                 .GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version ?? "0.0";
-            return double.Parse(version);
+            return new Version(version);
         }
 
         public static async Task<List<string>> getInterestingFileUpdatesAsync()
@@ -533,13 +533,13 @@ namespace WinShareEnum
             return await readFromSiteAsync(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/filterRules.txt"));
         }
 
-        public static async Task<double> getLatestVersionAsync()
+        public static async Task<Version> getLatestVersionAsync()
         {
             var lines = await readFromSiteAsync(new Uri("https://raw.githubusercontent.com/nccgroup/WinShareEnum/master/Info/version.txt"));
-            return double.Parse(lines[0]);
+            return new Version(lines[0].Trim());
         }
 
-        public static async Task<string> downloadUpdateAsync(double newestVersion)
+        public static async Task<string> downloadUpdateAsync(Version newestVersion)
         {
             string filePath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
