@@ -84,6 +84,7 @@ namespace WinShareEnum
         }
 
         private static ConcurrentDictionary<string, string> SIDsDict = new ConcurrentDictionary<string, string>();
+        private static ConcurrentDictionary<string, string> _hostnameCache = new ConcurrentDictionary<string, string>();
 
         public struct shareStruct
         {
@@ -206,6 +207,17 @@ namespace WinShareEnum
             SetGlowVisibility(pgbMain, Visibility.Hidden);
             NUMBER_FILES_PROCESSED = 0;
             SIDsDict = new ConcurrentDictionary<string, string>();
+            _hostnameCache = new ConcurrentDictionary<string, string>();
+        }
+
+        /// <summary>
+        /// Returns "hostname (ip)" if hostname is cached, otherwise just the IP.
+        /// </summary>
+        private static string GetDisplayName(string ip)
+        {
+            if (_hostnameCache.TryGetValue(ip, out string hostname))
+                return $"{hostname} ({ip})";
+            return ip;
         }
 
         private void addToResultsList(string pathName, string filename, string comment = "")
@@ -271,7 +283,9 @@ namespace WinShareEnum
         private void addSharesToTreeview(List<shareStruct> item)
         {
             TreeViewItem ti = new TreeViewItem();
-            ti.Header = item[0].ipAddressHostname;
+            string serverIp = item[0].ipAddressHostname;
+            ti.Header = GetDisplayName(serverIp);
+            ti.Tag = serverIp;
             bool canEveryoneRead = false;
             bool canUserRead = false;
 
@@ -288,7 +302,7 @@ namespace WinShareEnum
 
                     if (logLevel < LOG_LEVEL.ERROR)
                     {
-                        addLog($"Share found: {_shareStruct.ipAddressHostname}\\{_shareStruct.shareName}");
+                        addLog($"Share found: {GetDisplayName(_shareStruct.ipAddressHostname)}\\{_shareStruct.shareName}");
                     }
                     TreeViewItem ti2 = new TreeViewItem();
                     ti2.Header = _shareStruct.shareName;
@@ -308,7 +322,7 @@ namespace WinShareEnum
                         treeItem.Foreground = brush_EveryoneRead;
                         if (logLevel <= LOG_LEVEL.INTERESTINGONLY)
                         {
-                            addLog($"world-readable share found: {_shareStruct.ipAddressHostname}\\{_shareStruct.shareName}");
+                            addLog($"world-readable share found: {GetDisplayName(_shareStruct.ipAddressHostname)}\\{_shareStruct.shareName}");
                         }
 
                         canEveryoneRead = true;
@@ -318,7 +332,7 @@ namespace WinShareEnum
                         treeItem.Foreground = brush_currentUserRead;
                         if (logLevel <= LOG_LEVEL.INTERESTINGONLY)
                         {
-                            addLog($"User-readable share found: {_shareStruct.ipAddressHostname}\\{_shareStruct.shareName}");
+                            addLog($"User-readable share found: {GetDisplayName(_shareStruct.ipAddressHostname)}\\{_shareStruct.shareName}");
                         }
 
                         canUserRead = true;
@@ -390,16 +404,16 @@ namespace WinShareEnum
                     StackPanel sp = (StackPanel)parent.Header;
                     TextBlock tb = (TextBlock)sp.Children[1];
 
-
-                    string serverName = tb.Text;
+                    string serverIp = parent.Tag as string ?? tb.Text;
+                    string displayName = tb.Text;
                     string shareName = item.Header.ToString();
                     StringBuilder sb = new StringBuilder();
                     bool FoundShare = false;
 
-                    if (all_readable_shares.ContainsKey(serverName))
+                    if (all_readable_shares.ContainsKey(serverIp))
                     {
-                        sb.Append($@"\\{serverName}\{shareName}:");
-                        foreach (shareStruct ss in all_readable_shares[serverName])
+                        sb.Append($@"\\{displayName}\{shareName}:");
+                        foreach (shareStruct ss in all_readable_shares[serverIp])
                         {
                             if (ss.shareName == shareName)
                             {
@@ -425,7 +439,7 @@ namespace WinShareEnum
                         if (!FoundShare)
                         {
                             sb = new StringBuilder();
-                            sb.Append($@"\\{serverName}\{shareName}:");
+                            sb.Append($@"\\{displayName}\{shareName}:");
                             sb.Append("\r\n\t- Unable to enumerate share permissions.");
                             tb_SelectedSharePerms.IsEnabled = false;
                         }
@@ -886,7 +900,7 @@ namespace WinShareEnum
             {
                 foreach (shareStruct ss in all_readable_shares[key])
                 {
-                    sb.Append($"\r\n\r\n\r\n\\\\{key}\\{ss.shareName}:\r\n");
+                    sb.Append($"\r\n\r\n\r\n\\\\{GetDisplayName(key)}\\{ss.shareName}:\r\n");
 
                     foreach (FileSystemAccessRule fas in ss.permissionsList)
                     {
@@ -980,7 +994,7 @@ namespace WinShareEnum
                 {
                     if (ss.everyoneCanRead)
                     {
-                        sb.Append($"\r\n\r\n\\\\{ss.ipAddressHostname}\\{ss.shareName}:");
+                        sb.Append($"\r\n\r\n\\\\{GetDisplayName(ss.ipAddressHostname)}\\{ss.shareName}:");
                         foreach (FileSystemAccessRule fas in ss.permissionsList)
                         {
                             if (fas.IdentityReference.ToString().ToLower() == "everyone")
@@ -1019,9 +1033,10 @@ namespace WinShareEnum
                 List<string> fileFilterUpdates = await Updates.getFileFilterUpdatesAsync();
                 foreach (string update in fileFilterUpdates)
                 {
-                    if (!Settings.Default.FileContentRules.Contains(update) && update != "")
+                    if (!string.IsNullOrEmpty(update) && !fileContentsFilters.Contains(update))
                     {
                         Settings.Default.FileContentRules.Add(update);
+                        fileContentsFilters.Add(update);
                         count++;
                         addLog($"Added file filter rule {update}");
                     }
@@ -1032,9 +1047,10 @@ namespace WinShareEnum
                 List<string> interestingUpdates = await Updates.getInterestingFileUpdatesAsync();
                 foreach (string update in interestingUpdates)
                 {
-                    if (!Settings.Default.interestingFileNameRules.Contains(update) && update != "")
+                    if (!string.IsNullOrEmpty(update) && !interestingFileList.Contains(update))
                     {
                         Settings.Default.interestingFileNameRules.Add(update);
+                        interestingFileList.Add(update);
                         count++;
                         addLog($"Added interesting file rule {update}");
                     }
@@ -1160,6 +1176,23 @@ namespace WinShareEnum
             }
 
             var oNetworkCredential = getNetworkCredentials(ServerName);
+
+            // Resolve hostname via reverse DNS and cache it
+            if (!_hostnameCache.ContainsKey(ServerName))
+            {
+                try
+                {
+                    var hostEntry = await Dns.GetHostEntryAsync(ServerName);
+                    if (!string.IsNullOrEmpty(hostEntry.HostName) && hostEntry.HostName != ServerName)
+                    {
+                        _hostnameCache.TryAdd(ServerName, hostEntry.HostName);
+                    }
+                }
+                catch
+                {
+                    // DNS resolution failed, no hostname available
+                }
+            }
 
             try
             {
