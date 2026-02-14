@@ -55,8 +55,9 @@ namespace WinShareEnum
         {
             if (sl_threads != null && lbl_Threads.Content != null)
             {
-               lbl_Threads.Content = Math.Round(sl_threads.Value).ToString();
-               MainWindow._parallelOption.MaxDegreeOfParallelism = int.Parse(Math.Round(sl_threads.Value).ToString());
+               int threads = (int)Math.Round(sl_threads.Value);
+               lbl_Threads.Content = threads.ToString();
+               MainWindow._parallelOption.MaxDegreeOfParallelism = threads;
             }
         }
 

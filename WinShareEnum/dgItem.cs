@@ -7,7 +7,7 @@ using System.Windows.Controls;
 
 namespace WinShareEnum
 {
-    public class dgItem
+    public class DgItem
     {
         public string Name { get; set; }
         public string Comment { get; set; }
