@@ -66,7 +66,7 @@ namespace WinShareEnum
 
             byte bits = byte.Parse(x[1]);
             uint ip = 0;
-            String[] ipParts0 = x[0].Split('.');
+            string[] ipParts0 = x[0].Split('.');
             for (int i = 0; i < 4; i++)
             {
                 ip = ip << 8;
@@ -104,7 +104,7 @@ namespace WinShareEnum
         /// <returns></returns>
         private bool TryParseSimpleRange(string ipRange)
         {
-            String[] ipParts = ipRange.Split('.');
+            string[] ipParts = ipRange.Split('.');
 
             beginIP = new byte[4];
             endIP = new byte[4];

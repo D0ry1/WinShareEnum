@@ -95,7 +95,7 @@ namespace WinShareEnum
 
         private void btn_interesting_add_Click(object sender, RoutedEventArgs e)
         {
-            if (tb_interesting_newFilter.Text != "")
+            if (!string.IsNullOrEmpty(tb_interesting_newFilter.Text))
             {
                 Persistence.saveInterestingRule(tb_interesting_newFilter.Text);
                 lb_interesting.Items.Add(tb_interesting_newFilter.Text);
@@ -116,7 +116,7 @@ namespace WinShareEnum
         private void btn_fileFilter_add_Click(object sender, RoutedEventArgs e)
         {
 
-            if (tb_fileFilter_newFilter.Text != "")
+            if (!string.IsNullOrEmpty(tb_fileFilter_newFilter.Text))
             {
                 Persistence.saveFileContentRule(tb_fileFilter_newFilter.Text);
                 lb_fileContents.Items.Add(tb_fileFilter_newFilter.Text);

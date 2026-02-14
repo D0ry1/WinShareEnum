@@ -120,7 +120,7 @@ namespace WinShareEnum
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -128,7 +128,7 @@ namespace WinShareEnum
 
         private void tbUsername_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (tbUsername.Text != "")
+            if (!string.IsNullOrEmpty(tbUsername.Text))
             {
                 USERNAME = tbUsername.Text;
             }
@@ -145,7 +145,7 @@ namespace WinShareEnum
 
         private void tbPassword_PasswordChanged(object sender, RoutedEventArgs e)
         {
-            if (tbPassword.Password != "")
+            if (!string.IsNullOrEmpty(tbPassword.Password))
             {
                 PASSWORD = tbPassword.Password;
             }
@@ -229,11 +229,11 @@ namespace WinShareEnum
           
                 if (!_cancellationToken.IsCancellationRequested)
                 {
-                    loglist.Enqueue(DateTime.Now + " - " + item);
+                    loglist.Enqueue($"{DateTime.Now} - {item}");
                 }
-                else if (isDeadMessage == true)
+                else if (isDeadMessage)
                 {
-                    loglist.Enqueue(DateTime.Now + " - " + item);
+                    loglist.Enqueue($"{DateTime.Now} - {item}");
                     resetTokens();
                 }
             while (!loglist.IsEmpty)
@@ -246,7 +246,7 @@ namespace WinShareEnum
                  {
                      lbLog.Items.Add(res);
 
-                     if (autoScroll == true)
+                     if (autoScroll)
                      {
                          lbLog.SelectedIndex = lbLog.Items.Count - 1;
                          lbLog.ScrollIntoView(lbLog.SelectedItem);
@@ -288,7 +288,7 @@ namespace WinShareEnum
 
                     if (logLevel < LOG_LEVEL.ERROR)
                     {
-                        addLog("Share found: " + _shareStruct.ipAddressHostname + "\\" + _shareStruct.shareName);
+                        addLog($"Share found: {_shareStruct.ipAddressHostname}\\{_shareStruct.shareName}");
                     }
                     TreeViewItem ti2 = new TreeViewItem();
                     ti2.Header = _shareStruct.shareName;
@@ -303,22 +303,22 @@ namespace WinShareEnum
                 {
                     // Full Access = 2032127, Modify = 1245631, Read Write = 118009, Read Only = 1179817
                     //everyone can read/write or full perms
-                    if (_shareStruct.shareName == (string)treeItem.Header && _shareStruct.everyoneCanRead == true)
+                    if (_shareStruct.shareName == (string)treeItem.Header && _shareStruct.everyoneCanRead)
                     {
                         treeItem.Foreground = brush_EveryoneRead;
                         if (logLevel <= LOG_LEVEL.INTERESTINGONLY)
                         {
-                            addLog("world-readable share found: " + _shareStruct.ipAddressHostname + "\\" + _shareStruct.shareName);
+                            addLog($"world-readable share found: {_shareStruct.ipAddressHostname}\\{_shareStruct.shareName}");
                         }
 
                         canEveryoneRead = true;
                     }
-                    else if (_shareStruct.shareName == (string)treeItem.Header && _shareStruct.currentUserCanRead == true)
+                    else if (_shareStruct.shareName == (string)treeItem.Header && _shareStruct.currentUserCanRead)
                     {
                         treeItem.Foreground = brush_currentUserRead;
                         if (logLevel <= LOG_LEVEL.INTERESTINGONLY)
                         {
-                            addLog("User-readable share found: " + _shareStruct.ipAddressHostname + "\\" + _shareStruct.shareName);
+                            addLog($"User-readable share found: {_shareStruct.ipAddressHostname}\\{_shareStruct.shareName}");
                         }
 
                         canUserRead = true;
@@ -330,7 +330,7 @@ namespace WinShareEnum
                 }
             }
 
-            if (canEveryoneRead == true)
+            if (canEveryoneRead)
             {
                 StackPanel holder = new StackPanel();
                 holder.Orientation = Orientation.Horizontal;
@@ -341,7 +341,7 @@ namespace WinShareEnum
                 ti.Header = holder;
                 ti.Foreground = brush_EveryoneRead;
             }
-            else if (canUserRead == true)
+            else if (canUserRead)
             {
                 ti.Foreground = brush_currentUserRead;
                 StackPanel holder = new StackPanel();
@@ -358,7 +358,7 @@ namespace WinShareEnum
         private void updateNumberofFilesProcessedLabel()
         {
             Interlocked.Increment(ref NUMBER_FILES_PROCESSED);
-            Dispatcher.Invoke((Action)delegate { lbl_fileCount.Content = "Files Processed: " + NUMBER_FILES_PROCESSED; });
+            Dispatcher.Invoke((Action)delegate { lbl_fileCount.Content = $"Files Processed: {NUMBER_FILES_PROCESSED}"; });
         }
 
         private void SetGlowVisibility(ProgressBar progressBar, Visibility visibility)
@@ -398,7 +398,7 @@ namespace WinShareEnum
 
                     if (all_readable_shares.ContainsKey(serverName))
                     {
-                        sb.Append(@"\\" + serverName + "\\" + shareName + ":");
+                        sb.Append($@"\\{serverName}\{shareName}:");
                         foreach (shareStruct ss in all_readable_shares[serverName])
                         {
                             if (ss.shareName == shareName)
@@ -407,25 +407,25 @@ namespace WinShareEnum
                                 foreach (FileSystemAccessRule fas in ss.permissionsList)
                                 {
                                     //if we have resolved group SIDs, try and get the resolved version
-                                    if (resolveGroupSIDs == true && SIDsDict.ContainsKey(fas.IdentityReference.Value))
+                                    if (resolveGroupSIDs && SIDsDict.ContainsKey(fas.IdentityReference.Value))
                                     {
-                                        sb.Append("\r\n\r\n\t- " + SIDsDict[fas.IdentityReference.Value]);
+                                        sb.Append($"\r\n\r\n\t- {SIDsDict[fas.IdentityReference.Value]}");
                                     }
                                     else
                                     {
-                                        sb.Append("\r\n\r\n\t- " + fas.IdentityReference.ToString());
+                                        sb.Append($"\r\n\r\n\t- {fas.IdentityReference}");
                                     }
 
-                                    sb.Append("\r\n\t\t--" + MapGenericRightsToFileSystemRights(fas.FileSystemRights));
+                                    sb.Append($"\r\n\t\t--{MapGenericRightsToFileSystemRights(fas.FileSystemRights)}");
                                 }
 
                                 sb.Append("\r\n");
                             }
                         }
-                        if (FoundShare == false)
+                        if (!FoundShare)
                         {
                             sb = new StringBuilder();
-                            sb.Append(@"\\" + serverName + "\\" + shareName + ":");
+                            sb.Append($@"\\{serverName}\{shareName}:");
                             sb.Append("\r\n\t- Unable to enumerate share permissions.");
                             tb_SelectedSharePerms.IsEnabled = false;
                         }
@@ -467,7 +467,7 @@ namespace WinShareEnum
 
             try
             {
-                if (checkbox_Null.IsChecked == false)
+                if (checkbox_Null.IsChecked != true)
                 {
                     string[] splat = tbUsername.Text.Split('\\');
                     if (splat.Length < 2)
@@ -479,7 +479,7 @@ namespace WinShareEnum
                         throw new Exception("Enter credentials");
                     }
 
-                    AUTHLOCALLY = splat[0] == "." ? true : false;
+                    AUTHLOCALLY = splat[0] == ".";
                 }
 
                 btn_Stop.IsEnabled = true;
@@ -488,7 +488,7 @@ namespace WinShareEnum
                 resetGUI();
                 List<IPAddress> ip_list = new List<IPAddress>();
 
-                if (useImportedIPs == true)
+                if (useImportedIPs)
                 {
                     ip_list = ImportedIPs;
                 }
@@ -506,7 +506,7 @@ namespace WinShareEnum
                 }
 
                 pgbMain.Maximum = ip_list.Count;
-                addLog("Starting share enumeration of " + ip_list.Count + " servers (" + _parallelOption.MaxDegreeOfParallelism + " threads)...");
+                addLog($"Starting share enumeration of {ip_list.Count} servers ({_parallelOption.MaxDegreeOfParallelism} threads)...");
 
                 pgbMain.Visibility = Visibility.Visible;
 
@@ -521,9 +521,9 @@ namespace WinShareEnum
                     });
 
                     //resolve any SIDs that are necessary on the domain specified
-                    if (resolveGroupSIDs == true && USERNAME != null && USERNAME != "" && AUTHLOCALLY == false && SIDsToResolve.Count > 0) //no point resolving SIDs if we are authing locally only
+                    if (resolveGroupSIDs && !string.IsNullOrEmpty(USERNAME) && !AUTHLOCALLY && SIDsToResolve.Count > 0) //no point resolving SIDs if we are authing locally only
                     {
-                        addLog("Resolving " + SIDsToResolve.Count + " Group SIDs");
+                        addLog($"Resolving {SIDsToResolve.Count} Group SIDs");
                         pgbMain.Value = 0;
                         pgbMain.Maximum = SIDsToResolve.Count;
 
@@ -536,31 +536,31 @@ namespace WinShareEnum
                         {
                             Dispatcher.Invoke((Action)delegate
                             {
-                                if (creds.Domain != null || creds.Domain != "")
+                                if (!string.IsNullOrEmpty(creds.Domain))
                                 {
                                     addLog("Getting domain controller");
                                     domainController = getDomainControllers(creds.Domain, creds.UserName, creds.Password);
                                 }
                             });
 
-                            if (domainController != "")
+                            if (!string.IsNullOrEmpty(domainController))
                             {
-                                addLog("Using domain controller " + domainController + " for LDAP lookups");
+                                addLog($"Using domain controller {domainController} for LDAP lookups");
                                 Parallel.ForEach(SIDsToResolve, _parallelOption, SID =>
                                     {
                                         if (logLevel < LOG_LEVEL.ERROR)
                                         {
-                                            Dispatcher.Invoke((Action)delegate { addLog("Attempting to look up domain SID " + SID); });
+                                            Dispatcher.Invoke((Action)delegate { addLog($"Attempting to look up domain SID {SID}"); });
                                         }
 
                                         try
                                         {
                                             string ResolvedSID = resolveDomainGroupSID(SID, domainController, creds);
-                                            if (ResolvedSID != "")
+                                            if (!string.IsNullOrEmpty(ResolvedSID))
                                             {
                                                 if (!SIDsDict.ContainsKey(SID))
                                                 {
-                                                    Dispatcher.Invoke((Action)delegate { addLog("Resolved Group SID " + SID + " to " + ResolvedSID); });
+                                                    Dispatcher.Invoke((Action)delegate { addLog($"Resolved Group SID {SID} to {ResolvedSID}"); });
                                                 }
 
                                                 SIDsDict.TryAdd(SID, ResolvedSID);
@@ -570,7 +570,7 @@ namespace WinShareEnum
                                         {
                                             if (logLevel < LOG_LEVEL.INTERESTINGONLY)
                                             {
-                                                Dispatcher.Invoke((Action)delegate { addLog("Failed to resolve SID " + SID + " - " + ex.ToString()); });
+                                                Dispatcher.Invoke((Action)delegate { addLog($"Failed to resolve SID {SID} - {ex}"); });
                                             }
                                         }
 
@@ -610,12 +610,12 @@ namespace WinShareEnum
                     totalShares += all_readable_shares[lss].Count;
                     foreach (shareStruct ss in all_readable_shares[lss])
                     {
-                        if (ss.everyoneCanRead == true)
+                        if (ss.everyoneCanRead)
                         {
                             everyoneReadable++;
                             userReadable++;
                         }
-                        else if (ss.currentUserCanRead == true)
+                        else if (ss.currentUserCanRead)
                         {
                             userReadable++;
                         }
@@ -627,8 +627,8 @@ namespace WinShareEnum
                     btnFindInterestingFiles.IsEnabled = true;
                     btnGrepFiles.IsEnabled = true;
                 }
-                addLog(userReadable + " shares readable by current user on " + totalServers + " servers");
-                addLog(everyoneReadable + " shares readable by everyone");
+                addLog($"{userReadable} shares readable by current user on {totalServers} servers");
+                addLog($"{everyoneReadable} shares readable by everyone");
 
             }
             catch (OperationCanceledException)
@@ -662,7 +662,7 @@ namespace WinShareEnum
 
                     if (logLevel < LOG_LEVEL.INFO)
                     {
-                        addLog("Bad exception " + ex.Message + ex.StackTrace);
+                        addLog($"Bad exception {ex.Message}{ex.StackTrace}");
                     }
                     else
                     {
@@ -716,7 +716,7 @@ namespace WinShareEnum
                 {
                     foreach (shareStruct ss in all_readable_shares[serverName])
                     {
-                        shareList.Add(serverName + "\\" + ss.shareName);
+                        shareList.Add($@"{serverName}\{ss.shareName}");
                     }
                 }
 
@@ -724,7 +724,7 @@ namespace WinShareEnum
 
                 pgbMain.Maximum = shareList.Count;
                 pgbMain.Value = 0;
-                addLog("Searching for interesting files on " + shareList.Count + " shares...");
+                addLog($"Searching for interesting files on {shareList.Count} shares...");
 
 
                 await Task.Run(() =>
@@ -780,7 +780,7 @@ namespace WinShareEnum
 
                     if (logLevel < LOG_LEVEL.INFO)
                     {
-                        addLog("Bad exception " + ex.Message + ex.StackTrace);
+                        addLog($"Bad exception {ex.Message}{ex.StackTrace}");
                     }
                     else
                     {
@@ -806,7 +806,7 @@ namespace WinShareEnum
                 {
                     foreach (shareStruct ss in all_readable_shares[serverName])
                     {
-                        shareList.Add(serverName + "\\" + ss.shareName);
+                        shareList.Add($@"{serverName}\{ss.shareName}");
                     }
                 }
 
@@ -814,7 +814,7 @@ namespace WinShareEnum
 
                 pgbMain.Maximum = shareList.Count;
                 pgbMain.Value = 0;
-                addLog("Searching File Contents on " + shareList.Count + " shares...");
+                addLog($"Searching File Contents on {shareList.Count} shares...");
 
 
                 await Task.Run(() =>
@@ -865,7 +865,7 @@ namespace WinShareEnum
 
                 if (logLevel < LOG_LEVEL.INFO)
                 {
-                    addLog("Bad exception " + ex.Message + ex.StackTrace);
+                    addLog($"Bad exception {ex.Message}{ex.StackTrace}");
                 }
                 else
                 {
@@ -886,20 +886,20 @@ namespace WinShareEnum
             {
                 foreach (shareStruct ss in all_readable_shares[key])
                 {
-                    sb.Append("\r\n\r\n\r\n" + @"\\" + key + "\\" + ss.shareName + ":" + "\r\n");
+                    sb.Append($"\r\n\r\n\r\n\\\\{key}\\{ss.shareName}:\r\n");
 
                     foreach (FileSystemAccessRule fas in ss.permissionsList)
                     {
-                        if (resolveGroupSIDs == true && SIDsDict.ContainsKey(fas.IdentityReference.Value))
+                        if (resolveGroupSIDs && SIDsDict.ContainsKey(fas.IdentityReference.Value))
                         {
-                            sb.Append("\r\n\r\n\t- " + SIDsDict[fas.IdentityReference.Value]);
+                            sb.Append($"\r\n\r\n\t- {SIDsDict[fas.IdentityReference.Value]}");
                         }
                         else
                         {
-                            sb.Append("\r\n\r\n\t- " + fas.IdentityReference.ToString());
+                            sb.Append($"\r\n\r\n\t- {fas.IdentityReference}");
                         }
 
-                        sb.Append("\r\n\t\t--" + MapGenericRightsToFileSystemRights(fas.FileSystemRights));
+                        sb.Append($"\r\n\t\t--{MapGenericRightsToFileSystemRights(fas.FileSystemRights)}");
                     }
                 }
             }
@@ -929,7 +929,7 @@ namespace WinShareEnum
             try
             {
                 string[] basepath = aa.Path.Split('\\');
-                string winshareEnumPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "\\winShareEnumOut";
+                string winshareEnumPath = $@"{Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\winShareEnumOut";
                 if (!Directory.Exists(winshareEnumPath))
                 {
                     Directory.CreateDirectory(winshareEnumPath);
@@ -937,25 +937,25 @@ namespace WinShareEnum
 
                 var oNetworkCredential = getNetworkCredentials(basepath[2]);
 
-                using (new RemoteAccessHelper.NetworkConnection(@"\\" + basepath[2] + "\\" + basepath[3], oNetworkCredential, false))
+                using (new RemoteAccessHelper.NetworkConnection($@"\\{basepath[2]}\{basepath[3]}", oNetworkCredential, false))
                 {
                     try
                     {
-                        File.Copy(aa.Path, winshareEnumPath+ "\\" + aa.Name, true);
-                        addLog("Downloaded " + aa.Name + " to " + winshareEnumPath + ".");
+                        File.Copy(aa.Path, $@"{winshareEnumPath}\{aa.Name}", true);
+                        addLog($"Downloaded {aa.Name} to {winshareEnumPath}.");
                     }
                     catch (Exception ex)
                     {
                         if (logLevel <= LOG_LEVEL.ERROR)
                         {
-                            addLog("Error downloading file: " + ex.Message);
+                            addLog($"Error downloading file: {ex.Message}");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Dispatcher.Invoke((Action)delegate { addLog("Error downloading file " + aa.Name + " - " + ex.Message); });
+                Dispatcher.Invoke((Action)delegate { addLog($"Error downloading file {aa.Name} - {ex.Message}"); });
             }
         }
 
@@ -965,7 +965,7 @@ namespace WinShareEnum
 
             foreach (string s in lbLog.Items)
             {
-                sb.Append(s + "\r\n");
+                sb.Append($"{s}\r\n");
             }
             Clipboard.SetText(sb.ToString());
         }
@@ -978,15 +978,15 @@ namespace WinShareEnum
             {
                 foreach (shareStruct ss in ssList)
                 {
-                    if (ss.everyoneCanRead == true)
+                    if (ss.everyoneCanRead)
                     {
-                        sb.Append("\r\n\r\n" + @"\\" + ss.ipAddressHostname + "\\" + ss.shareName + ":");
+                        sb.Append($"\r\n\r\n\\\\{ss.ipAddressHostname}\\{ss.shareName}:");
                         foreach (FileSystemAccessRule fas in ss.permissionsList)
                         {
                             if (fas.IdentityReference.ToString().ToLower() == "everyone")
                             {
-                                sb.Append("\r\n\t- " + fas.IdentityReference.ToString());
-                                sb.Append("\r\n\t\t--" + MapGenericRightsToFileSystemRights(fas.FileSystemRights));
+                                sb.Append($"\r\n\t- {fas.IdentityReference}");
+                                sb.Append($"\r\n\t\t--{MapGenericRightsToFileSystemRights(fas.FileSystemRights)}");
                             }
 
                         }
@@ -1001,14 +1001,14 @@ namespace WinShareEnum
             StringBuilder sb = new StringBuilder();
             foreach (dgItem item in lv_resultsList.Items)
             {
-                sb.Append(item.Path + "\t\t" + item.Comment + "\r\n");
+                sb.Append($"{item.Path}\t\t{item.Comment}\r\n");
             }
             Clipboard.SetText(sb.ToString());
         }
 
         private void mi_version_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Windows Share Enumerator\r\nVersion: " + Updates.getCurrentVersion().ToString() + "\r\nJonathan.Murray@nccgroup.com", "About", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show($"Windows Share Enumerator\r\nVersion: {Updates.getCurrentVersion()}\r\nJonathan.Murray@nccgroup.com", "About", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private async void mi_updateRules_Click(object sender, RoutedEventArgs e)
@@ -1097,7 +1097,7 @@ namespace WinShareEnum
 
             if (result == true)
             {
-                addLog("Adding IPs from " + dlg.FileName);
+                addLog($"Adding IPs from {dlg.FileName}");
                 resetGUI();
                 useImportedIPs = true;
                 tbIPRange.Text = "Using Imported";
@@ -1127,16 +1127,16 @@ namespace WinShareEnum
                             }
                             catch (Exception)
                             {
-                                addLog("Error - failed to parse " + line + " as a valid IP range, skipping it..");
+                                addLog($"Error - failed to parse {line} as a valid IP range, skipping it..");
                             }
                         }
                     }
 
-                    addLog("Successfully added " + fileEntries + " entries, " + totalEntries + " IPs total. Hit GO to begin.");
+                    addLog($"Successfully added {fileEntries} entries, {totalEntries} IPs total. Hit GO to begin.");
                 }
                 catch (Exception ex)
                 {
-                    addLog("Error importing IPs " + ex.Message + "\r\n" + ex.StackTrace);
+                    addLog($"Error importing IPs {ex.Message}\r\n{ex.StackTrace}");
                     useImportedIPs = false;
                 }
 
@@ -1156,7 +1156,7 @@ namespace WinShareEnum
             if (logLevel < LOG_LEVEL.ERROR)
             {
                 var id = Task.CurrentId;
-                Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " started populating shares on " + ServerName); });
+                Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} started populating shares on {ServerName}"); });
             }
 
             var oNetworkCredential = getNetworkCredentials(ServerName);
@@ -1164,7 +1164,7 @@ namespace WinShareEnum
             try
             {
                 //auth to server, we do want to timeout on discovery
-                using (new RemoteAccessHelper.NetworkConnection(@"\\" + ServerName, oNetworkCredential, true))
+                using (new RemoteAccessHelper.NetworkConnection($@"\\{ServerName}", oNetworkCredential, true))
                 {
                     WinNetworking _getNetworkShares = new WinNetworking();
 
@@ -1192,7 +1192,7 @@ namespace WinShareEnum
                                 {
                                     throw new OperationCanceledException();
                                 }
-                                var _dirPerm = new DirectoryInfo(@"\\" + ServerName + "\\" + ss.shareName).GetAccessControl();
+                                var _dirPerm = new DirectoryInfo($@"\\{ServerName}\{ss.shareName}").GetAccessControl();
                                 var _accessRules = _dirPerm.GetAccessRules(true, true, typeof(NTAccount));
                                 ss.permissionsList = _accessRules;
 
@@ -1206,7 +1206,7 @@ namespace WinShareEnum
                                     }
 
                                     //add any SIDs that need resolving to the queue
-                                    if (fas.IdentityReference.Value.StartsWith("S-1-5") && resolveGroupSIDs == true)
+                                    if (fas.IdentityReference.Value.StartsWith("S-1-5") && resolveGroupSIDs)
                                     {
                                         if (!SIDsToResolve.Contains(fas.IdentityReference.Value))
                                         {
@@ -1249,7 +1249,7 @@ namespace WinShareEnum
                             {
                                 if (logLevel < LOG_LEVEL.INTERESTINGONLY)
                                 {
-                                    Dispatcher.Invoke((Action)delegate { addLog("Error: " + ServerName + " (" + currentShareName + ")" + " - " + ex.Message); });
+                                    Dispatcher.Invoke((Action)delegate { addLog($"Error: {ServerName} ({currentShareName}) - {ex.Message}"); });
                                 }
                             }
                             retList.Add(ss);
@@ -1259,7 +1259,7 @@ namespace WinShareEnum
                     if (logLevel < LOG_LEVEL.ERROR)
                     {
                         var id = Task.CurrentId;
-                        Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " finished populating shares OK on " + ServerName); });
+                        Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} finished populating shares OK on {ServerName}"); });
                     }
                 }
             }
@@ -1268,7 +1268,7 @@ namespace WinShareEnum
             {
                 if (logLevel < LOG_LEVEL.ERROR)
                 {
-                    Dispatcher.Invoke((Action)delegate { addLog("Error: " + ServerName + " - timed out"); });
+                    Dispatcher.Invoke((Action)delegate { addLog($"Error: {ServerName} - timed out"); });
                 }
             }
 
@@ -1276,7 +1276,7 @@ namespace WinShareEnum
             {
                 if (logLevel < LOG_LEVEL.INTERESTINGONLY)
                 {
-                    Dispatcher.Invoke((Action)delegate { addLog("Error: " + ServerName + " - " + ex.Message); });
+                    Dispatcher.Invoke((Action)delegate { addLog($"Error: {ServerName} - {ex.Message}"); });
                 }
             }
 
@@ -1288,7 +1288,7 @@ namespace WinShareEnum
                 //add it to the global list of all readable shares
                 foreach (var res in retList)
                 {
-                    if (res.everyoneCanRead == true || res.currentUserCanRead == true)
+                    if (res.everyoneCanRead || res.currentUserCanRead)
                     {
                         if (all_readable_shares.ContainsKey(res.ipAddressHostname))
                         {
@@ -1335,7 +1335,7 @@ namespace WinShareEnum
                 blnWasNumber = true;
             }
 
-            if (blnWasNumber == false)
+            if (!blnWasNumber)
             {
                 MappedRights = OriginalRights;
             }
@@ -1378,14 +1378,14 @@ namespace WinShareEnum
                 List<string> finalInteresting = new List<string>();
                 var oNetworkCredential = getNetworkCredentials(sharepath.Split('\\')[0]);
                 //no need to timeout on long running tasko
-                using (new RemoteAccessHelper.NetworkConnection(@"\\" + sharepath, oNetworkCredential, false))
+                using (new RemoteAccessHelper.NetworkConnection($@"\\{sharepath}", oNetworkCredential, false))
                 {
                     List<string> firstFileList = new List<string>();
                     //low hanging
                     if (logLevel < LOG_LEVEL.ERROR)
                     {
                         var id = Task.CurrentId;
-                        Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " started searching interesting files (top dir only) on " + sharepath); });
+                        Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} started searching interesting files (top dir only) on {sharepath}"); });
                     }
                     try
                     {
@@ -1394,7 +1394,7 @@ namespace WinShareEnum
                             throw new OperationCanceledException();
                         }
 
-                        firstFileList = Directory.EnumerateFiles(@"\\" + sharepath, "*.*", System.IO.SearchOption.TopDirectoryOnly).ToList();
+                        firstFileList = Directory.EnumerateFiles($@"\\{sharepath}", "*.*", System.IO.SearchOption.TopDirectoryOnly).ToList();
                         if (firstFileList != null)
                         {
                             foreach (string file in firstFileList)
@@ -1407,14 +1407,14 @@ namespace WinShareEnum
                                 if (logLevel == LOG_LEVEL.DEBUG)
                                 {
                                     var id = Task.CurrentId;
-                                    Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " found file " + fi); });
+                                    Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} found file {fi}"); });
                                 }
                             }
 
                             if (logLevel < LOG_LEVEL.ERROR)
                             {
                                 var id = Task.CurrentId;
-                                Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " succsessfully finished searching interesting files (top dir only) on " + sharepath); });
+                                Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} succsessfully finished searching interesting files (top dir only) on {sharepath}"); });
                             }
                         }
                     }
@@ -1422,16 +1422,16 @@ namespace WinShareEnum
                     {
                         if (logLevel < LOG_LEVEL.INTERESTINGONLY)
                         {
-                            Dispatcher.Invoke((Action)delegate { addLog("Error searching in " + sharepath + " - " + ex.Message); });
+                            Dispatcher.Invoke((Action)delegate { addLog($"Error searching in {sharepath} - {ex.Message}"); });
                         }
                     }
 
-                    if (recursiveSearch == true)
+                    if (recursiveSearch)
                     {
                         if (logLevel < LOG_LEVEL.ERROR)
                         {
                             var id = Task.CurrentId;
-                            Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " starting recursively searching for interesting files on " + sharepath); });
+                            Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} starting recursively searching for interesting files on {sharepath}"); });
                         }
 
 
@@ -1457,7 +1457,7 @@ namespace WinShareEnum
                         if (logLevel < LOG_LEVEL.ERROR)
                         {
                             var id = Task.CurrentId;
-                            Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " finished recursively searching for interesting files on " + sharepath); });
+                            Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} finished recursively searching for interesting files on {sharepath}"); });
                         }
                     }
                     Dispatcher.Invoke((Action)delegate { pgbMain.Value += 1; });
@@ -1473,7 +1473,7 @@ namespace WinShareEnum
             {
                 if (logLevel < LOG_LEVEL.INTERESTINGONLY)
                 {
-                    Dispatcher.Invoke((Action)delegate { addLog("Error: failed to enumerate files on " + sharepath + " - " + ex.Message); });
+                    Dispatcher.Invoke((Action)delegate { addLog($"Error: failed to enumerate files on {sharepath} - {ex.Message}"); });
                 }
                 return false;
             }
@@ -1487,14 +1487,14 @@ namespace WinShareEnum
                 List<string> finalInteresting = new List<string>();
                 var oNetworkCredential = getNetworkCredentials(sharepath.Split('\\')[0]);
                 //no need to timeout on long running tasko
-                using (new RemoteAccessHelper.NetworkConnection(@"\\" + sharepath, oNetworkCredential, false))
+                using (new RemoteAccessHelper.NetworkConnection($@"\\{sharepath}", oNetworkCredential, false))
                 {
                     List<string> firstFileList = new List<string>();
                     //low hanging
                     if (logLevel < LOG_LEVEL.ERROR)
                     {
                         var id = Task.CurrentId;
-                        Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " started searching interesting files (top dir only) on " + sharepath); });
+                        Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} started searching interesting files (top dir only) on {sharepath}"); });
                     }
                     try
                     {
@@ -1503,7 +1503,7 @@ namespace WinShareEnum
                             throw new OperationCanceledException();
                         }
 
-                        firstFileList = Directory.EnumerateFiles(@"\\" + sharepath, "*.*", System.IO.SearchOption.TopDirectoryOnly).ToList();
+                        firstFileList = Directory.EnumerateFiles($@"\\{sharepath}", "*.*", System.IO.SearchOption.TopDirectoryOnly).ToList();
                         if (firstFileList != null)
                         {
                             foreach (string file in firstFileList)
@@ -1519,14 +1519,14 @@ namespace WinShareEnum
                                 if (logLevel == LOG_LEVEL.DEBUG)
                                 {
                                     var id = Task.CurrentId;
-                                    Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " found file " + file); });
+                                    Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} found file {file}"); });
                                 }
                             }
 
                             if (logLevel < LOG_LEVEL.ERROR)
                             {
                                 var id = Task.CurrentId;
-                                Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " succsessfully finished grepping files (top dir only) on " + sharepath); });
+                                Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} succsessfully finished grepping files (top dir only) on {sharepath}"); });
                             }
                         }
                     }
@@ -1534,17 +1534,17 @@ namespace WinShareEnum
                     {
                         if (logLevel < LOG_LEVEL.INTERESTINGONLY)
                         {
-                            Dispatcher.Invoke((Action)delegate { addLog("Error searching in " + sharepath + " - " + ex.Message); });
+                            Dispatcher.Invoke((Action)delegate { addLog($"Error searching in {sharepath} - {ex.Message}"); });
                         }
                     }
 
 
-                    if (recursiveSearch == true)
+                    if (recursiveSearch)
                     {
                         if (logLevel < LOG_LEVEL.ERROR)
                         {
                             var id = Task.CurrentId;
-                            Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " starting recursively searching for greppable files on " + sharepath); });
+                            Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} starting recursively searching for greppable files on {sharepath}"); });
                         }
 
 
@@ -1567,7 +1567,7 @@ namespace WinShareEnum
                         if (logLevel < LOG_LEVEL.ERROR)
                         {
                             var id = Task.CurrentId;
-                            Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " finished recursively searching for interesting files on " + sharepath); });
+                            Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} finished recursively searching for interesting files on {sharepath}"); });
                         }
                     }
                     Dispatcher.Invoke((Action)delegate { pgbMain.Value += 1; });
@@ -1584,7 +1584,7 @@ namespace WinShareEnum
             {
                 if (logLevel < LOG_LEVEL.INTERESTINGONLY)
                 {
-                    Dispatcher.Invoke((Action)delegate { addLog("Error: failed to enumerate files on " + sharepath + " - " + ex.Message); });
+                    Dispatcher.Invoke((Action)delegate { addLog($"Error: failed to enumerate files on {sharepath} - {ex.Message}"); });
                 }
                 return false;
             }
@@ -1597,35 +1597,33 @@ namespace WinShareEnum
                 FileInfo fi = new FileInfo(filePath);
                 if (fi.Length <= MAX_FILESIZE * 1024)
                 {
-                    if (includeBinaryFiles == false)
+                    if (!includeBinaryFiles)
                     {
 
                         BinaryHelper bh = new BinaryHelper();
                         Encoding e;
                         try
                         {
-                            if (bh.IsText(out e, filePath, 100) == true)
+                            if (bh.IsText(out e, filePath, 100))
                             {
                                 string line;
-                                StreamReader sr = new StreamReader(filePath, e);
+                                using var sr = new StreamReader(filePath, e);
                                 if (logLevel < LOG_LEVEL.INFO)
                                 {
                                     var threadId = Task.CurrentId;
-                                    Dispatcher.Invoke((Action)delegate { addLog("Thread " + threadId + " began inspecting " + filePath); });
+                                    Dispatcher.Invoke((Action)delegate { addLog($"Thread {threadId} began inspecting {filePath}"); });
                                 }
                                 while ((line = sr.ReadLine()) != null)
                                 {
                                     isFilterMatch(line, filePath);
                                 }
-
-                                sr.Close();
                             }
                         }
                         catch (Exception ex)
                         {
                             if (logLevel < LOG_LEVEL.INFO)
                             {
-                                Dispatcher.Invoke((Action)delegate { addLog("Failed to open " + filePath + " for reading " + ex.Message); });
+                                Dispatcher.Invoke((Action)delegate { addLog($"Failed to open {filePath} for reading {ex.Message}"); });
                             }
                         }
                     } //end binary files only
@@ -1635,24 +1633,22 @@ namespace WinShareEnum
                         try
                         {
                             string line;
-                            StreamReader sr = new StreamReader(filePath);
+                            using var sr = new StreamReader(filePath);
                             if (logLevel < LOG_LEVEL.INFO)
                             {
                                 var threadId = Task.CurrentId;
-                                Dispatcher.Invoke((Action)delegate { addLog("Thread " + threadId + " began inspecting " + filePath); });
+                                Dispatcher.Invoke((Action)delegate { addLog($"Thread {threadId} began inspecting {filePath}"); });
                             }
                             while ((line = sr.ReadLine()) != null)
                             {
                                 isFilterMatch(line, filePath);
                             }
-
-                            sr.Close();
                         }
                         catch (Exception ex)
                         {
                             if (logLevel < LOG_LEVEL.INFO)
                             {
-                                Dispatcher.Invoke((Action)delegate { addLog("Failed to open " + filePath + " for reading " + ex.Message); });
+                                Dispatcher.Invoke((Action)delegate { addLog($"Failed to open {filePath} for reading {ex.Message}"); });
                             }
                         }
                     }//end all files (including binary) 
@@ -1660,7 +1656,7 @@ namespace WinShareEnum
                     if (logLevel < LOG_LEVEL.INFO)
                     {
                         var threadId = Task.CurrentId;
-                        Dispatcher.Invoke((Action)delegate { addLog("Thread " + threadId + " finished inspecting " + filePath); });
+                        Dispatcher.Invoke((Action)delegate { addLog($"Thread {threadId} finished inspecting {filePath}"); });
                     }
 
                 }//end small files only
@@ -1670,7 +1666,7 @@ namespace WinShareEnum
             {
                 if (logLevel < LOG_LEVEL.INFO)
                 {
-                    Dispatcher.Invoke((Action)delegate { addLog("Failed to get file info for " + filePath + " - " + ex.Message); });
+                    Dispatcher.Invoke((Action)delegate { addLog($"Failed to get file info for {filePath} - {ex.Message}"); });
                 }
             }
             updateNumberofFilesProcessedLabel();
@@ -1691,9 +1687,9 @@ namespace WinShareEnum
             }
             if (!all_readable_files[server].ContainsKey(share))
             {
-                Dispatcher.Invoke((Action)delegate { addLog("Enumerating all files on " + sharepath + " this may take a while..."); });
-                recursiveList = getDirectoryFilesRecursive(@"\\" + sharepath).ToList();
-                Dispatcher.Invoke((Action)delegate { addLog("Finished enumerating files on " + sharepath); });
+                Dispatcher.Invoke((Action)delegate { addLog($"Enumerating all files on {sharepath} this may take a while..."); });
+                recursiveList = getDirectoryFilesRecursive($@"\\{sharepath}").ToList();
+                Dispatcher.Invoke((Action)delegate { addLog($"Finished enumerating files on {sharepath}"); });
                 all_readable_files[server][share] = recursiveList;
 
             }
@@ -1718,21 +1714,20 @@ namespace WinShareEnum
             {
                 path = queue.Dequeue();
                 string lowered = path.ToLower();
-                if ((INCLUDE_WINDOWS_DIRS == false 
-                    && !lowered.EndsWith("c:\\windows") 
+                if (INCLUDE_WINDOWS_DIRS
+                    || (!lowered.EndsWith("c:\\windows")
                     && !lowered.EndsWith("admin$")
                     && !lowered.EndsWith("c$\\windows")
                     && !lowered.EndsWith("d$\\windows")
                     && !lowered.EndsWith("e$\\windows")
                     && !lowered.EndsWith("f$\\windows")
-                    ) //yes, this might miss some stuff, if you don't like it, don't use it
-                    || INCLUDE_WINDOWS_DIRS == true) 
+                    )) //yes, this might miss some stuff, if you don't like it, don't use it
                 {
 
                     if (logLevel == LOG_LEVEL.DEBUG)
                     {
                         var id = Task.CurrentId;
-                        Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " found directory " + path); });
+                        Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} found directory {path}"); });
                     }
 
 
@@ -1752,7 +1747,7 @@ namespace WinShareEnum
                     {
                         if (logLevel < LOG_LEVEL.ERROR)
                         {
-                            Dispatcher.Invoke((Action)delegate { addLog("Permission denied for shares in directory " + path + " - " + ex.Message); });
+                            Dispatcher.Invoke((Action)delegate { addLog($"Permission denied for shares in directory {path} - {ex.Message}"); });
                         }
                     }
                     string[] files = null;
@@ -1770,7 +1765,7 @@ namespace WinShareEnum
                                 var id = Task.CurrentId;
                                 foreach (string fi in files)
                                 {
-                                    Dispatcher.Invoke((Action)delegate { addLog("Thread " + id + " found path " + fi); });
+                                    Dispatcher.Invoke((Action)delegate { addLog($"Thread {id} found path {fi}"); });
                                 }
                             }
                         }
@@ -1784,7 +1779,7 @@ namespace WinShareEnum
                     {
                         if (logLevel < LOG_LEVEL.ERROR)
                         {
-                            Dispatcher.Invoke((Action)delegate { addLog("Permission denied for shares in directory " + path + " - " + ex.Message); });
+                            Dispatcher.Invoke((Action)delegate { addLog($"Permission denied for shares in directory {path} - {ex.Message}"); });
                         }
                     }
 
@@ -1822,16 +1817,16 @@ namespace WinShareEnum
 
                 if (shortFileName == interesting)
                 {
-                    addToResultsList(filePath, shortFileName, "filename directly matches rule  (" + interesting + ")");
-                    Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
+                    addToResultsList(filePath, shortFileName, $"filename directly matches rule  ({interesting})");
+                    Dispatcher.Invoke((Action)delegate { addLog($"Interesting file found - {shortFileName} ({shortFileName})"); });
                     return;
                 }
 
                 string lowered = shortFileName.ToLower();
                 if (lowered == interesting)
                 {
-                    addToResultsList(filePath, shortFileName, "filename matches rule  (" + interesting + ")");
-                    Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
+                    addToResultsList(filePath, shortFileName, $"filename matches rule  ({interesting})");
+                    Dispatcher.Invoke((Action)delegate { addLog($"Interesting file found - {shortFileName} ({shortFileName})"); });
                     return;
                 }
 
@@ -1849,8 +1844,8 @@ namespace WinShareEnum
                 {
                     if (Path.GetExtension(lowered) == interesting.TrimStart('*'))
                     {
-                        addToResultsList(filePath, shortFileName, "extension rule matched (" + interesting + ")");
-                        Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
+                        addToResultsList(filePath, shortFileName, $"extension rule matched ({interesting})");
+                        Dispatcher.Invoke((Action)delegate { addLog($"Interesting file found - {shortFileName} ({shortFileName})"); });
                         return;
                     }
                 }
@@ -1862,8 +1857,8 @@ namespace WinShareEnum
                     string bb = interesting.TrimEnd('*').TrimEnd('.');
                     if (Path.GetFileNameWithoutExtension(lowered) == interesting.TrimEnd('*').TrimEnd('.'))
                     {
-                        addToResultsList(filePath, shortFileName, "wildcard extension rule matched (" + interesting + ")");
-                        Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
+                        addToResultsList(filePath, shortFileName, $"wildcard extension rule matched ({interesting})");
+                        Dispatcher.Invoke((Action)delegate { addLog($"Interesting file found - {shortFileName} ({shortFileName})"); });
                         return;
                     }
                 }
@@ -1875,8 +1870,8 @@ namespace WinShareEnum
                     {
                         if (System.Text.RegularExpressions.Regex.IsMatch(shortFileName, interesting.TrimStart('#'), System.Text.RegularExpressions.RegexOptions.IgnoreCase))
                         {
-                            addToResultsList(filePath, shortFileName, "regex matched (" + interesting.TrimStart('#') + ")");
-                            Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + shortFileName + " (" + shortFileName + ")"); });
+                            addToResultsList(filePath, shortFileName, $"regex matched ({interesting.TrimStart('#')})");
+                            Dispatcher.Invoke((Action)delegate { addLog($"Interesting file found - {shortFileName} ({shortFileName})"); });
                             return;
                         }
                     }
@@ -1884,7 +1879,7 @@ namespace WinShareEnum
                     {
                         if (logLevel <= LOG_LEVEL.ERROR)
                         {
-                            Dispatcher.Invoke((Action)delegate { addLog("Regex parsing failed on interesting name comparison, file - " + shortFileName + " regex parsed " + interesting + "(" + ex.Message + ")"); });
+                            Dispatcher.Invoke((Action)delegate { addLog($"Regex parsing failed on interesting name comparison, file - {shortFileName} regex parsed {interesting}({ex.Message})"); });
                         }
                         return;
                     }
@@ -1905,16 +1900,16 @@ namespace WinShareEnum
 
                 if (fileFilter.StartsWith("###"))
                 {
-                    if (System.Text.RegularExpressions.Regex.IsMatch(lowered, fileFilter.TrimStart('#').ToLower()) == true)
+                    if (System.Text.RegularExpressions.Regex.IsMatch(lowered, fileFilter.TrimStart('#').ToLower()))
                     {
-                        Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + Path.GetFileName(path) + " (" + path + ") matches regex filter rule: " + fileFilter); });
-                        addToResultsList(path, Path.GetFileName(path), "contents regex matched (" + fileFilter.TrimStart('#') + ")");
+                        Dispatcher.Invoke((Action)delegate { addLog($"Interesting file found - {Path.GetFileName(path)} ({path}) matches regex filter rule: {fileFilter}"); });
+                        addToResultsList(path, Path.GetFileName(path), $"contents regex matched ({fileFilter.TrimStart('#')})");
                     }
                 }
                 else if (lowered.Contains(fileFilter.ToLower()))
                 {
-                    Dispatcher.Invoke((Action)delegate { addLog("Interesting file found - " + Path.GetFileName(path) + " (" + path + ") matches filter rule: " + fileFilter); });
-                    addToResultsList(path, Path.GetFileName(path), "file contents matched " + fileFilter);
+                    Dispatcher.Invoke((Action)delegate { addLog($"Interesting file found - {Path.GetFileName(path)} ({path}) matches filter rule: {fileFilter}"); });
+                    addToResultsList(path, Path.GetFileName(path), $"file contents matched {fileFilter}");
                 }
             }
         }
@@ -1926,9 +1921,9 @@ namespace WinShareEnum
         private static NetworkCredential getNetworkCredentials(string ServerName)
         {
             var oNetworkCredential = new NetworkCredential();
-            if (AUTHLOCALLY == true)
+            if (AUTHLOCALLY)
             {
-                oNetworkCredential.UserName = ServerName + USERNAME.TrimStart('.');
+                oNetworkCredential.UserName = $"{ServerName}{USERNAME.TrimStart('.')}";
                 oNetworkCredential.Password = PASSWORD;
             }
             else
@@ -1957,9 +1952,9 @@ namespace WinShareEnum
             {
                 if (!SIDsDict.ContainsKey(SID))
                 {
-                    DirectoryEntry entry = new DirectoryEntry("LDAP://" + dc, oNetworkCredential.UserName, oNetworkCredential.Password);
+                    DirectoryEntry entry = new DirectoryEntry($"LDAP://{dc}", oNetworkCredential.UserName, oNetworkCredential.Password);
                     DirectorySearcher dSearch = new DirectorySearcher(entry);
-                    dSearch.Filter = "(&(objectsid=" + SID + "))";
+                    dSearch.Filter = $"(&(objectsid={SID}))";
 
 
                     dSearch.PropertiesToLoad.Add("samaccountname"); //only thing we care about
@@ -2003,10 +1998,10 @@ namespace WinShareEnum
                     
                     if (logLevel < LOG_LEVEL.ERROR)
                     {
-                        addLog("SID " + SID + " resolved to " + resolved);
+                        addLog($"SID {SID} resolved to {resolved}");
                     }
 
-                    return oNetworkCredential.Domain.ToUpper() + "\\" + resolved;
+                    return $@"{oNetworkCredential.Domain.ToUpper()}\{resolved}";
 
                 }
 
@@ -2017,13 +2012,12 @@ namespace WinShareEnum
                     return ooot;
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 if (logLevel < LOG_LEVEL.ERROR)
                 {
-                    addLog("Failed to resolve SID " + SID);
+                    addLog($"Failed to resolve SID {SID}");
                 }
-                var vbb = ex;
                 return "";
             }
 
@@ -2041,10 +2035,10 @@ namespace WinShareEnum
                 var dcs = domain.DomainControllers;
                 foreach (DomainController dc2 in dcs)
                 {
-                    addLog("Found domain controller " + dc2.Name);
+                    addLog($"Found domain controller {dc2.Name}");
                 }
 
-                if (dc == null || dc == "")
+                if (string.IsNullOrEmpty(dc))
                 {
                     addLog("Failed to get domain controller, skipping domain sid resolution");
                 }
@@ -2053,7 +2047,7 @@ namespace WinShareEnum
             }
             catch (Exception ex)
             {
-                addLog("Error resolving domain controller " + ex.ToString());
+                addLog($"Error resolving domain controller {ex}");
                 throw;
             }
         }
@@ -2065,7 +2059,7 @@ namespace WinShareEnum
         /// <param name="e"></param>
         private void tbFilter_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (tbFilter.Text == "")
+            if (string.IsNullOrEmpty(tbFilter.Text))
             {
                 dgList.ToList().ForEach(v => lv_resultsList.Items.Add(v));
             }
