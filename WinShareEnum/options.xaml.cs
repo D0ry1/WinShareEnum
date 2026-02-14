@@ -7,9 +7,9 @@ namespace WinShareEnum
     /// <summary>
     /// Interaction logic for options.xaml
     /// </summary>
-    public partial class options : Window
+    public partial class Options : Window
     {
-        public options()
+        public Options()
         {
             InitializeComponent();
 
@@ -87,7 +87,7 @@ namespace WinShareEnum
         {
             if (lb_interesting.SelectedItem != null)
             {
-                persistance.deleteInterestingRule(lb_interesting.SelectedValue.ToString());
+                Persistence.deleteInterestingRule(lb_interesting.SelectedValue.ToString());
                 lb_interesting.Items.Remove(lb_interesting.SelectedItem);
             }
 
@@ -97,7 +97,7 @@ namespace WinShareEnum
         {
             if (tb_interesting_newFilter.Text != "")
             {
-                persistance.saveInterestingRule(tb_interesting_newFilter.Text);
+                Persistence.saveInterestingRule(tb_interesting_newFilter.Text);
                 lb_interesting.Items.Add(tb_interesting_newFilter.Text);
                 tb_interesting_newFilter.Text = "";
             }
@@ -108,7 +108,7 @@ namespace WinShareEnum
 
             if (lb_fileContents.SelectedItem != null)
             {
-                persistance.deleteFileContentRule(lb_fileContents.SelectedValue.ToString());
+                Persistence.deleteFileContentRule(lb_fileContents.SelectedValue.ToString());
                 lb_fileContents.Items.Remove(lb_fileContents.SelectedItem);
             }
         }
@@ -118,7 +118,7 @@ namespace WinShareEnum
 
             if (tb_fileFilter_newFilter.Text != "")
             {
-                persistance.saveFileContentRule(tb_fileFilter_newFilter.Text);
+                Persistence.saveFileContentRule(tb_fileFilter_newFilter.Text);
                 lb_fileContents.Items.Add(tb_fileFilter_newFilter.Text);
                 tb_fileFilter_newFilter.Text = "";
             }

@@ -1,4 +1,4 @@
-﻿<Window x:Class="WinShareEnum.options"
+﻿<Window x:Class="WinShareEnum.Options"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Windows Share Enumerator - Options" Height="372" Width="776" ResizeMode="NoResize"  Icon="pack://application:,,,/Resources/NCCG-Icon-[CMYK].ico" >

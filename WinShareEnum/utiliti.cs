@@ -129,9 +129,9 @@ namespace WinShareEnum
     /// <summary>
     /// impersonation helper
     /// </summary>
-    public class RemoteAccessHelper
+    public partial class RemoteAccessHelper
     {
-        public class NetworkConnection : IDisposable
+        public partial class NetworkConnection : IDisposable
         {
             string _networkName;
 
@@ -159,8 +159,7 @@ namespace WinShareEnum
 
                         var task = Task.Run(() =>
                         {
-                            result = WNetAddConnection2(
-                                netResource,
+                            result = WNetAddConnection2(netResource,
                                 credentials.Password,
                                 credentials.UserName,
                                 0);
@@ -267,15 +266,16 @@ namespace WinShareEnum
     /// <summary>
     /// pinvoke wrapper
     /// </summary>
-    public class WinNetworking
+    public partial class WinNetworking
     {
 
         #region External Calls
-        [DllImport("Netapi32.dll", SetLastError = true)]
-        static extern int NetApiBufferFree(IntPtr Buffer);
-        [DllImport("Netapi32.dll", CharSet = CharSet.Unicode)]
-        private static extern int NetShareEnum(
-             StringBuilder ServerName,
+        [LibraryImport("Netapi32.dll")]
+        private static partial int NetApiBufferFree(IntPtr Buffer);
+
+        [LibraryImport("Netapi32.dll", StringMarshalling = StringMarshalling.Utf16)]
+        private static partial int NetShareEnum(
+             string ServerName,
              int level,
              ref IntPtr bufPtr,
              uint prefmaxlen,
@@ -317,9 +317,8 @@ namespace WinShareEnum
             int resume_handle = 0;
             int nStructSize = Marshal.SizeOf(typeof(SHARE_INFO_1));
             IntPtr bufPtr = IntPtr.Zero;
-            StringBuilder server = new StringBuilder(Server);
 
-            int ret = NetShareEnum(server, 1, ref bufPtr, MAX_PREFERRED_LENGTH, ref entriesread, ref totalentries, ref resume_handle);
+            int ret = NetShareEnum(Server, 1, ref bufPtr, MAX_PREFERRED_LENGTH, ref entriesread, ref totalentries, ref resume_handle);
             if (ret == NERR_Success)
             {
                 IntPtr currentPtr = bufPtr;
@@ -353,9 +352,9 @@ namespace WinShareEnum
     /// <summary>
     /// saves to file, nb this also updates the program internal lists (interestingFileList, fileContentsFilters)
     /// </summary>
-    public class persistance
+    public class Persistence
     {
-        public persistance()
+        public Persistence()
         {
             if (Settings.Default.interestingFileNameRules == null)
             {
@@ -428,7 +427,7 @@ namespace WinShareEnum
 
     }
 
-    public class binaryHelper
+    public class BinaryHelper
     {
 
 
@@ -513,15 +512,14 @@ namespace WinShareEnum
 
     }
 
-    public class updates
+    public class Updates
     {
         private static readonly HttpClient _httpClient = new HttpClient();
 
         public static double getCurrentVersion()
         {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
-            string version = fvi.FileVersion;
+            var version = Assembly.GetExecutingAssembly()
+                .GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version ?? "0.0";
             return double.Parse(version);
         }
 

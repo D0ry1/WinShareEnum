@@ -104,16 +104,16 @@ namespace WinShareEnum
                 InitializeComponent();
                 loglist = new ConcurrentQueue<string>();
                 //get saved stuff, if it is first run, add all of the hardcoded stuff to settings, save them, then null out hardcoded stuff and work purely with saved stuff in future
-                persistance p = new persistance();
+                Persistence p = new Persistence();
 
                 fileContentsFilters = new List<string>();
-                foreach (string s in persistance.getFileContentRules())
+                foreach (string s in Persistence.getFileContentRules())
                 {
                     fileContentsFilters.Add(s);
                 }
 
                 interestingFileList = new List<string>();
-                foreach (string s in persistance.getInterestingFiles())
+                foreach (string s in Persistence.getInterestingFiles())
                 {
                     interestingFileList.Add(s);
                 }
@@ -677,7 +677,7 @@ namespace WinShareEnum
         {
             if (Application.Current.Windows.Count == 1)
             {
-                options o = new options();
+                Options o = new Options();
                 o.Show();
             }
             else
@@ -1008,7 +1008,7 @@ namespace WinShareEnum
 
         private void mi_version_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Windows Share Enumerator\r\nVersion: " + updates.getCurrentVersion().ToString() + "\r\nJonathan.Murray@nccgroup.com", "About", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Windows Share Enumerator\r\nVersion: " + Updates.getCurrentVersion().ToString() + "\r\nJonathan.Murray@nccgroup.com", "About", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private async void mi_updateRules_Click(object sender, RoutedEventArgs e)
@@ -1016,7 +1016,7 @@ namespace WinShareEnum
             int count = 0;
             try
             {
-                List<string> fileFilterUpdates = await updates.getFileFilterUpdatesAsync();
+                List<string> fileFilterUpdates = await Updates.getFileFilterUpdatesAsync();
                 foreach (string update in fileFilterUpdates)
                 {
                     if (!Settings.Default.FileContentRules.Contains(update) && update != "")
@@ -1029,7 +1029,7 @@ namespace WinShareEnum
 
                 Settings.Default.Save();
 
-                List<string> interestingUpdates = await updates.getInterestingFileUpdatesAsync();
+                List<string> interestingUpdates = await Updates.getInterestingFileUpdatesAsync();
                 foreach (string update in interestingUpdates)
                 {
                     if (!Settings.Default.interestingFileNameRules.Contains(update) && update != "")
@@ -1054,8 +1054,8 @@ namespace WinShareEnum
         {
             try
             {
-                var latestVersion = await updates.getLatestVersionAsync();
-                if (updates.getCurrentVersion() < latestVersion)
+                var latestVersion = await Updates.getLatestVersionAsync();
+                if (Updates.getCurrentVersion() < latestVersion)
                 {
                     MessageBoxResult mbr = MessageBox.Show($"New version available, want to download it? \r\n\r\nNote: this will download to {Environment.GetFolderPath(Environment.SpecialFolder.Desktop)}\\WinShareEnum-{latestVersion}.exe", "Update", MessageBoxButton.YesNo, MessageBoxImage.Information);
 
@@ -1064,7 +1064,7 @@ namespace WinShareEnum
                         try
                         {
                             addLog("Downloading most recent version to desktop..");
-                            string path = await updates.downloadUpdateAsync(latestVersion);
+                            string path = await Updates.downloadUpdateAsync(latestVersion);
                             addLog($"{path} downloaded.");
                         }
                         catch (Exception ex)
@@ -1600,7 +1600,7 @@ namespace WinShareEnum
                     if (includeBinaryFiles == false)
                     {
 
-                        binaryHelper bh = new binaryHelper();
+                        BinaryHelper bh = new BinaryHelper();
                         Encoding e;
                         try
                         {
